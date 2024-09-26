@@ -46,10 +46,10 @@ async def routes(*, session: aiohttp.ClientSession):
 
 
 @ ensure_session
-async def stops(id: str, *, session: aiohttp.ClientSession):
+async def stops(route_id: str, *, session: aiohttp.ClientSession):
     async with session.get('https://opendata.mtr.com.hk/data/light_rail_routes_and_stops.csv') as response:
         stops = [stop for stop in csv.reader((await response.text('utf-8')).splitlines()[1:])
-                 if (set((stop[0], 'outbound' if stop[1] == '1' else 'inbound'))) == set(id.split('_')[:2])]
+                 if (set((stop[0], 'outbound' if stop[1] == '1' else 'inbound'))) == set(route_id.split('_')[:2])]
 
     if len(stops) == 0:
         raise KeyError('route not exists')
@@ -65,7 +65,8 @@ async def etas(route_id: str, stop_id: str, language: t.Language = 'zh', *, sess
     route, _, destination = route_id.split('_')
     lc = 'ch' if language == 'zh' else 'en'
 
-    async with session.get(f'https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule', params={'station_id': stop_id}) as request:
+    async with session.get('https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule',
+                           params={'station_id': stop_id}) as request:
         response = await request.json()
 
     if len(response) == 0 or response.get('status', 0) == 0:

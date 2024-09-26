@@ -39,10 +39,10 @@ async def routes(*, session: aiohttp.ClientSession):
 
 
 @ensure_session
-async def stops(id: str, *, session: aiohttp.ClientSession):
+async def stops(route_id: str, *, session: aiohttp.ClientSession):
     async with session.get('https://opendata.mtr.com.hk/data/mtr_bus_stops.csv') as response:
         stops = [stop for stop in csv.reader((await response.text('utf-8')).splitlines()[1:])
-                 if (set((stop[0], 'outbound' if stop[1] == 'O' else 'inbound'))) == set(id.split('_')[:2])]
+                 if (set((stop[0], 'outbound' if stop[1] == 'O' else 'inbound'))) == set(route_id.split('_')[:2])]
 
     if len(stops) == 0:
         raise KeyError('route not exists')

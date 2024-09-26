@@ -33,9 +33,8 @@ def ensure_session(func: Awaitable):
         if kwargs.get('session') is not None:
             assert isinstance(kwargs['session'], aiohttp.ClientSession)
             return await func(*args, **kwargs)
-        else:
-            async with aiohttp.ClientSession() as s:
-                return await func(*args, **{**kwargs, 'session': s})
+        async with aiohttp.ClientSession() as s:
+            return await func(*args, **{**kwargs, 'session': s})
     return wrapper
 
 

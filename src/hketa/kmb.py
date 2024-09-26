@@ -43,7 +43,7 @@ async def routes(*, session: aiohttp.ClientSession):
 
 
 @ensure_session
-async def stops(id: str, *, session: aiohttp.ClientSession):
+async def stops(route_id: str, *, session: aiohttp.ClientSession):
     async def fetch(stop: dict, session: aiohttp.ClientSession):
         async with session.get(f'https://data.etabus.gov.hk/v1/transport/kmb/stop/{stop["stop"]}') as response:
             detail = (await response.json())['data']
@@ -56,7 +56,7 @@ async def stops(id: str, *, session: aiohttp.ClientSession):
                 }
             }
 
-    async with session.get(f'https://data.etabus.gov.hk/v1/transport/kmb/route-stop/{"/".join(id.split("_"))}') as response:
+    async with session.get(f'https://data.etabus.gov.hk/v1/transport/kmb/route-stop/{"/".join(route_id.split("_"))}') as response:
         stops = await asyncio.gather(
             *[fetch(stop, session) for stop in (await response.json())['data']])
 
@@ -85,9 +85,9 @@ async def etas(route_id: str, stop_id: str, language: t.Language = 'zh', *, sess
         if eta['dir'].lower() != direction[0]:
             continue
         if eta['eta'] is None:
-            if eta[f'rmk_en'] == 'The final bus has departed from this stop':
+            if eta['rmk_en'] == 'The final bus has departed from this stop':
                 return error_eta('eos')
-            elif eta[f'rmk_en'] == '':
+            elif eta['rmk_en'] == '':
                 return error_eta('empty')
             return error_eta(eta[f'rmk_{lc}'])
 
@@ -98,7 +98,7 @@ async def etas(route_id: str, stop_id: str, language: t.Language = 'zh', *, sess
             'is_scheduled': eta.get(f'rmk_{lc}') in ('\u539f\u5b9a\u73ed\u6b21', 'Scheduled Bus'),
             'extras': {
                 'destinaion': eta[f'dest_{lc}'],
-                'varient': _varient_text(eta['service_type']),
+                'varient': _varient_text(eta['service_type'], language),
                 'platform': None,
                 'car_length': None
             },
