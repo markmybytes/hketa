@@ -1,6 +1,5 @@
 {
     "files.eol": "\n",
-    "terminal.integrated.defaultProfile.windows": "Command Prompt",
     "[python]": {
         "editor.defaultFormatter": "ms-python.autopep8",
         "editor.formatOnSave": true
