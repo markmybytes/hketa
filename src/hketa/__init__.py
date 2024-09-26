@@ -16,12 +16,12 @@ def routes(co: t.Transport,
 
 
 def stops(co: t.Transport,
-          id: str,
+          route_id: str,
           *,
           session: aiohttp.ClientSession = None) -> Iterable[t.Stop]:
     return importlib.import_module(f'.{co}', sys.modules[__name__].__package__)\
         .__dict__\
-        .get('stops')(id, session=session)
+        .get('stops')(route_id, session=session)
 
 
 def etas(co: t.Language,
