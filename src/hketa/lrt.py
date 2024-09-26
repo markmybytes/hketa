@@ -98,7 +98,7 @@ async def etas(route_id: str, stop_id: str, language: t.Language = 'zh', *, sess
                     'is_arriving': False,
                     'is_scheduled': False,
                     'extras': {
-                        'destination': destination,
+                        'destination': eta[f'dest_{lc}'],
                         'varient': None,
                         'platform': str(platform['platform_id']),
                         'car_length': eta['train_length']
@@ -111,7 +111,7 @@ async def etas(route_id: str, stop_id: str, language: t.Language = 'zh', *, sess
                     'is_scheduled': False,
                     'remark': eta_min,
                     'extras': {
-                        'destination': destination,
+                        'destination': eta[f'dest_{lc}'],
                         'varient': None,
                         'platform': str(platform['platform_id']),
                         'car_length': eta['train_length']
