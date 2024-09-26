@@ -1,5 +1,6 @@
 from datetime import datetime
 import re
+from typing import Generator
 
 import aiohttp
 import pytz
@@ -9,7 +10,7 @@ from ._utils import dt_to_8601, ensure_session, error_eta
 
 
 @ensure_session
-async def routes(*, session: aiohttp.ClientSession):
+async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
     def description(route: dict[str,]):
         zh, en = [], []
         if route['specialRoute'] == 1:
@@ -72,7 +73,7 @@ async def routes(*, session: aiohttp.ClientSession):
 
 
 @ensure_session
-async def stops(route_id: str, *, session: aiohttp.ClientSession):
+async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop]:
     # pylint: disable=line-too-long
     async with session.get(
             f'https://rt.data.gov.hk/v2/transport/nlb/stop.php?action=list&routeId={route_id.split("_")[-1]}') as request:
@@ -94,7 +95,7 @@ async def etas(route_id: str,
                stop_id: str,
                language: t.Language = 'zh',
                *,
-               session: aiohttp.ClientSession):
+               session: aiohttp.ClientSession) -> t.Etas:
     async with session.get('https://rt.data.gov.hk/v2/transport/nlb/stop.php',
                            params={
                                'action': 'estimatedArrivals',
