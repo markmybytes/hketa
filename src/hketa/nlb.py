@@ -1,35 +1,42 @@
 from datetime import datetime
-import re
 from typing import Generator
 
 import aiohttp
+import bs4
 import pytz
 
 from . import t
-from ._utils import dt_to_8601, ensure_session, error_eta
+from ._utils import dt_to_8601, ensure_session, error_eta, ua_header
 
 
 @ensure_session
 async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
     def description(route: dict[str,]):
-        zh, en = [], []
-        if route['specialRoute'] == 1:
-            zh.append('\u7279\u5225\u7dda')
-            en.append('Special Departure')
-        if 'Circular' in route['routeName_e']:
-            zh.append('\u5faa\u74b0\u7dda')
-            en.append('Circular')
-        if '(from' in route['routeName_e'] or '(to' in route['routeName_e']:
-            s_en = re.search(r'\((from|to)\s(.*?)\)', route['routeName_e'])
-            s_zh = re.search(r'\((至)(.*?)\)|\((.*?)(開)\)',
-                             route['routeName_c'])
-            zh.append(f'{s_zh[1] or ""}{s_zh[2] or s_zh[3]}{s_zh[4] or ""}')
-            en.append(f'{s_en[1].capitalize()} {s_en[2]}')
+        descr = {}
+        for lc, routes_ in descriptions.items():
+            for service in routes_[route['routeNo']]:
+                if service['route_name'] == route[f'routeName_{lc}']:
+                    descr[lc] = service['description']
+                    break
+        return descr or None
 
-        return None if len(en) == 0 else {
-            'zh': '﹐'.join(zh),
-            'en': ', '.join(en)
-        }
+    descriptions = {'e': {}, 'c': {}}
+    async with aiohttp.ClientSession(headers=ua_header()) as sess_cua:
+        for lc in ('e', 'c'):
+            async with sess_cua.get(
+                    f'https://www.nlb.com.hk/language/set/{"en" if lc == "e" else "zh"}'):
+                pass
+            async with sess_cua.get('https://www.nlb.com.hk/route') as request:
+                bs = bs4.BeautifulSoup(await request.text(), "html.parser")
+
+            for tr in bs.select('table.property-table tr')[1:]:
+                route_no = tr.select('td')[0].get_text(strip=True)
+
+                descriptions[lc].setdefault(route_no, [])
+                descriptions[lc][route_no].append({
+                    'route_name': tr.select('td')[1].contents[1].get_text(),
+                    'description': tr.select('td')[1].contents[2].get_text(strip=True)
+                })
 
     routes_ = {}
     async with session.get(

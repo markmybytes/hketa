@@ -1,11 +1,16 @@
 from datetime import datetime
 from functools import wraps
+from pathlib import Path
+import random
 from typing import Awaitable, Literal, Union
 
 import aiohttp
 import pytz
 
 from . import t
+
+with open(Path(__file__).parent.joinpath('ua.txt'), encoding='utf-8') as f:
+    USER_AGENTS = tuple(a.strip() for a in f.readline())
 
 ERR_MESSAGES = {
     'api-error': {
@@ -55,3 +60,7 @@ def error_eta(message: Union[Literal['api-error', 'empty', 'eos', 'ss-effect'], 
         'message': ERR_MESSAGES.get(message, {}).get(language, message),
         'etas': None
     }
+
+
+def ua_header():
+    return {'User-Agent': random.choice(USER_AGENTS)}
