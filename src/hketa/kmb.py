@@ -44,7 +44,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
 
 
 @ensure_session
-async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop, None, None]:
+async def stops(route_id: str, *, session: aiohttp.ClientSession) -> list[dict[str,]]:
     async def fetch(stop: dict, session: aiohttp.ClientSession):
         async with session.get(
                 f'https://data.etabus.gov.hk/v1/transport/kmb/stop/{stop["stop"]}') as request:
