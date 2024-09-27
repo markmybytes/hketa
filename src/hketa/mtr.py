@@ -59,7 +59,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
 
 
 @ensure_session
-async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop]:
+async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop, None, None]:
     # column definition:
     #   route, direction, stopCode, stopID, stopTCName, stopENName, seq
     async with session.get(
