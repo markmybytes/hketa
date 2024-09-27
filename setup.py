@@ -5,6 +5,8 @@ setup(
     version='0.0.1',
     install_requires=[
         'aiohttp',
+        'beautifulsoup4',
+        'pyproj',
         'pytz'
     ],
     packages=find_packages(where='src'),
