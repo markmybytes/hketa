@@ -51,7 +51,8 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t
     return ({
         'id': s[3],
         'seq': int(s[2].removesuffix('.00')),
-        'name': {'zh': s[6], 'en': s[7]}
+        'name': {'zh': s[6], 'en': s[7]},
+        'location': (s[4], s[5])
     } for s in stops_)
 
 
