@@ -74,3 +74,8 @@ async def search_location(name: str, session: aiohttp.ClientSession) -> tuple[st
             f'https://geodata.gov.hk/gs/api/v1.0.0/locationSearch?q={name}') as request:
         first = (await request.json())[0]
         return EPSG_TRANSFORMER.transform(first['y'], first['x'])
+
+
+async def is_up_to_date(path: Path, url: str, session: aiohttp.ClientSession) -> bool:
+    async with session.get(url) as request:
+        return path.stat().st_mtime >= datetime.strptime((await request.text()).split('\n')[1], '%Y-%m-%d').timestamp()
