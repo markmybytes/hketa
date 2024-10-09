@@ -6,7 +6,7 @@ with open(Path(__file__).parent.joinpath('README.md'), encoding='utf-8') as f:
 
 setup(
     name='hketa',
-    version='0.0.1',
+    version='0.0.2',
     description='A Python package that provides normalised data access to public transports in Hong Kong.',
     long_description_content_type='text/markdown',
     long_description=long_description,
