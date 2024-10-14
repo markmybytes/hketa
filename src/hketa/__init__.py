@@ -24,7 +24,7 @@ def stops(co: t.Transport,
         .get('stops')(route_id, session=session)
 
 
-def etas(co: t.Language,
+def etas(co: t.Transport,
          route_id: str,
          stop_id: str,
          language: t.Language = 'zh',
