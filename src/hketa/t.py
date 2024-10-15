@@ -29,6 +29,7 @@ class Etas(TypedDict):
 class Route(TypedDict):
     class Service(TypedDict):
         id: str
+        gtfs_id: Optional[str]
         description: Optional[str]
         orig: dict[Language, str]
         dest: dict[Language, str]
