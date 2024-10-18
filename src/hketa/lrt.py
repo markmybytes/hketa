@@ -64,7 +64,7 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t
     return ({
         'id': s[3],
         'seq': int(s[6].removesuffix('.00')),
-        'name': {'zh': s[4], 'en': s[5]},
+        'name': {'tc': s[4], 'en': s[5]},
         'location': locations[i]
     } for i, s in enumerate(stops_))
 
@@ -72,11 +72,11 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t
 @ ensure_session
 async def etas(route_id: str,
                stop_id: str,
-               language: t.Language = 'zh',
+               language: t.Language = 'tc',
                *,
                session: aiohttp.ClientSession) -> t.Etas:
     route, _, destination = route_id.split('_')
-    lc = 'ch' if language == 'zh' else 'en'
+    lc = 'ch' if language == 'tc' else 'en'
 
     async with session.get('https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule',
                            params={'station_id': stop_id}) as request:
