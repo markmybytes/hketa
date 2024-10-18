@@ -33,11 +33,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
                 routes_[row[0]][direction].append({
                     'id': (route_id := '_'.join(filter(None, (row[0], direction, branch)))),
                     'description': None,
-                    'orig': {
-                        'id': row[2],
-                        'seq': int(row[6].removesuffix('.00')),
-                        'name': {'en': row[5], 'tc': row[4]}
-                    },
+                    'orig': {'en': row[5], 'tc': row[4]},
                     'dest': {}
                 })
             else:
@@ -52,8 +48,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
                         if branch['id'] != route_id:
                             continue
                         routes_[row[0]][direction][idx]['dest'] = {
-                            'seq': int(row[6].removesuffix('.00')),
-                            'name': {'en': row[5], 'tc': row[4]}
+                            'en': row[5], 'tc': row[4]
                         }
                         break
     return routes_

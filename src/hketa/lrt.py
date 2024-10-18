@@ -26,10 +26,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
                 routes_[row[0]][direction].append({
                     'id': None,
                     'description': None,
-                    'orig': {
-                        'seq': int(row[6].removesuffix('.00')),
-                        'name': {'en': row[5], 'tc': row[4]}
-                    },
+                    'orig':  {'en': row[5], 'tc': row[4]},
                     'dest': {}
                 })
             else:
@@ -42,8 +39,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
                         f'{row[0]}_{direction}_{row[5]}'
 
                 routes_[row[0]][direction][0]['dest'] = {
-                    'seq': int(row[6].removesuffix('.00')),
-                    'name': {'en': row[5], 'tc': row[4]}
+                    'en': row[5], 'tc': row[4]
                 }
     return routes_
 
