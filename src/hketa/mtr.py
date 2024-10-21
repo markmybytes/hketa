@@ -40,8 +40,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
                 # destination
                 if len(routes_[row[0]][direction]) == 1:
                     routes_[row[0]][direction][0]['dest'] = {
-                        'seq': int(row[6].removesuffix('.00')),
-                        'name': {'en': row[5], 'tc': row[4]}
+                        'en': row[5], 'tc': row[4]
                     }
                 else:
                     for idx, branch in enumerate(routes_[row[0]][direction]):
