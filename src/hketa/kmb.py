@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 from itertools import chain
-from typing import Literal, Optional
+from typing import Generator, Literal, Optional
 
 import aiohttp
 
@@ -10,41 +10,41 @@ from ._utils import dt_to_8601, ensure_session, error_eta
 
 
 @ensure_session
-async def routes(*, session: aiohttp.ClientSession):
-    routes = {}
+async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
+    routes_ = {}
     specials = set()
 
     async with session.get('https://data.etabus.gov.hk/v1/transport/kmb/route') as request:
         for route in (await request.json())['data']:
-            routes.setdefault(route['route'], {'inbound': [], 'outbound': []})
+            routes_.setdefault(route['route'], {'inbound': [], 'outbound': []})
             direction = 'outbound' if route['bound'] == 'O' else 'inbound'
 
-            routes[route['route']][direction].append({
+            routes_[route['route']][direction].append({
                 'id': f'{route["route"]}_{direction}_{route["service_type"]}',
                 'description': None,
                 'orig': {'zh': route['orig_tc'], 'en': route['orig_en']},
                 'dest': {'zh': route['dest_tc'], 'en': route['dest_en']},
             })
 
-            if len(routes[route['route']][direction]) > 1:
+            if len(routes_[route['route']][direction]) > 1:
                 specials.add(
                     (route['route'], '1' if route['bound'] == 'O' else '2'))
 
     varients = chain(*(await asyncio.gather(*[_variants(r, d, session) for r, d in specials])))
     for varient in (v for v in varients if v['ServiceType'] != '01   '):
         # pylint: disable=line-too-long
-        for service in routes[varient['Route']]['outbound' if varient['Bound'] == '1' else 'inbound']:
+        for service in routes_[varient['Route']]['outbound' if varient['Bound'] == '1' else 'inbound']:
             if service['id'].split('_')[2] == varient['ServiceType'].strip().removeprefix('0'):
                 service['description'] = {
                     'zh': varient['Desc_CHI'],
                     'en': varient['Desc_ENG']
                 }
                 break
-    return routes
+    return routes_
 
 
 @ensure_session
-async def stops(route_id: str, *, session: aiohttp.ClientSession):
+async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop]:
     async def fetch(stop: dict, session: aiohttp.ClientSession):
         async with session.get(
                 f'https://data.etabus.gov.hk/v1/transport/kmb/stop/{stop["stop"]}') as request:
@@ -74,7 +74,7 @@ async def etas(route_id: str,
                stop_id: str,
                language: t.Language = 'zh',
                *,
-               session: aiohttp.ClientSession):
+               session: aiohttp.ClientSession) -> t.Etas:
     route, direction, service_type = route_id.split('_')
     lc = 'tc' if language == 'zh' else 'en'
 

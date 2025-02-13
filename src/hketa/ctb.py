@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Generator, Literal, Optional
 
 import aiohttp
 
@@ -22,7 +22,7 @@ from ._utils import dt_to_8601, ensure_session, error_eta
 #     return {route[0]: route[1] for route in await asyncio.gather(*tasks)}
 
 @ensure_session
-async def routes(*, session: aiohttp.ClientSession):
+async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
     async def ends(r: dict, s: aiohttp.ClientSession):
         # pylint: disable=line-too-long
         async with s.get(f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{r["route"]}/inbound') as request:
@@ -62,7 +62,7 @@ async def routes(*, session: aiohttp.ClientSession):
 
 
 @ensure_session
-async def stops(route_id: str, *, session: aiohttp.ClientSession):
+async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop]:
     # pylint: disable=line-too-long
     async with session.get(
             f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{"/".join(route_id.split("_")[:2])}') as request:
@@ -83,7 +83,7 @@ async def etas(route_id: str,
                stop_id: str,
                language: t.Language = 'zh',
                *,
-               session: aiohttp.ClientSession):
+               session: aiohttp.ClientSession) -> t.Etas:
     route, direction, _ = route_id.split('_')
     lc = 'tc' if language == 'zh' else 'en'
 

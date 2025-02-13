@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime, timedelta
+from typing import Generator
 
 import aiohttp
 import pytz
@@ -9,7 +10,7 @@ from ._utils import dt_to_8601, ensure_session, error_eta
 
 
 @ensure_session
-async def routes(*, session: aiohttp.ClientSession):
+async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
     routes_ = {}
     async with session.get(
             'https://opendata.mtr.com.hk/data/light_rail_routes_and_stops.csv') as request:
@@ -47,7 +48,7 @@ async def routes(*, session: aiohttp.ClientSession):
 
 
 @ ensure_session
-async def stops(route_id: str, *, session: aiohttp.ClientSession):
+async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop]:
     async with session.get(
             'https://opendata.mtr.com.hk/data/light_rail_routes_and_stops.csv') as request:
         # pylint: disable=line-too-long
@@ -68,7 +69,7 @@ async def etas(route_id: str,
                stop_id: str,
                language: t.Language = 'zh',
                *,
-               session: aiohttp.ClientSession):
+               session: aiohttp.ClientSession) -> t.Etas:
     route, _, destination = route_id.split('_')
     lc = 'ch' if language == 'zh' else 'en'
 
