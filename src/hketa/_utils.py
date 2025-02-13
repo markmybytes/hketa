@@ -1,10 +1,11 @@
+import random
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
-import random
 from typing import Awaitable, Literal, Union
 
 import aiohttp
+import pyproj
 import pytz
 
 from . import t
@@ -30,6 +31,8 @@ ERR_MESSAGES = {
         'en': 'Special Service in Effect',
     }
 }
+
+EPSG_TRANSFORMER = pyproj.Transformer.from_crs('epsg:2326', 'epsg:4326')
 
 
 def ensure_session(func: Awaitable):
@@ -64,3 +67,10 @@ def error_eta(message: Union[Literal['api-error', 'empty', 'eos', 'ss-effect'], 
 
 def ua_header():
     return {'User-Agent': random.choice(USER_AGENTS)}
+
+
+async def search_location(name: str, session: aiohttp.ClientSession) -> tuple[str, str]:
+    async with session.get(
+            f'https://geodata.gov.hk/gs/api/v1.0.0/locationSearch?q={name}') as request:
+        first = (await request.json())[0]
+        return EPSG_TRANSFORMER.transform(first['y'], first['x'])

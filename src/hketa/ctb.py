@@ -1,25 +1,11 @@
 import asyncio
 from datetime import datetime
-from typing import Generator, Literal, Optional
 
 import aiohttp
 
 from . import t
 from ._utils import dt_to_8601, ensure_session, error_eta
 
-
-# @ensure_session
-# async def routes(*, session: aiohttp.ClientSession):
-#     # Stop ID of the same stop from different route will have the same ID,
-#     # caching the stop details to reduce the number of requests (around 600 - 700).
-#     # Execution time is not guaranteed to be reduced.
-#     stop_cache = {}
-#     semaphore = asyncio.Semaphore(10)
-
-#     async with session.get('https://rt.data.gov.hk/v2/transport/citybus/route/ctb') as response:
-#         tasks = [_stop_list(s['route'], stop_cache, semaphore, session)
-#                  for s in (await response.json())['data']]
-#     return {route[0]: route[1] for route in await asyncio.gather(*tasks)}
 
 @ensure_session
 async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
@@ -62,20 +48,30 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
 
 
 @ensure_session
-async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop, None, None]:
+async def stops(route_id: str, *, session: aiohttp.ClientSession) -> list[dict[str,]]:
+    async def fetch(stop: dict, session: aiohttp.ClientSession):
+        async with session.get(
+                f'https://rt.data.gov.hk/v2/transport/citybus/stop/{stop["stop"]}') as request:
+            detail = (await request.json())['data']
+            return {
+                'id': stop['stop'],
+                'seq': int(stop['seq']),
+                'name': {
+                    'tc': detail.get('name_tc'),
+                    'en': detail.get('name_en'),
+                },
+                'location': (detail['lat'], detail['long'])
+            }
+
     # pylint: disable=line-too-long
     async with session.get(
             f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{"/".join(route_id.split("_")[:2])}') as request:
-        data = (await request.json())['data']
-        names = await asyncio.gather(*[_stop_name(s['stop'], session) for s in data])
+        data = await asyncio.gather(
+            *[fetch(stop, session) for stop in (await request.json())['data']])
 
     if len(data) == 0:
         raise KeyError('route not exists')
-    return ({
-        'id': stop['stop'],
-        'seq': int(stop['seq']),
-        'name': names[idx]
-    } for idx, stop in enumerate(data))
+    return data
 
 
 @ensure_session
@@ -138,50 +134,63 @@ async def etas(route_id: str,
     }
 
 
-async def _stop_name(stop_id: str, session: aiohttp.ClientSession) -> dict[str, str]:
-    async with session.get(
-            f'https://rt.data.gov.hk/v2/transport/citybus/stop/{stop_id}') as request:
-        data = (await request.json())['data']
-        return {
-            'zh': data.get('name_tc', '未有資料'),
-            'en': data.get('name_en', 'N/A')
-        }
+# @ensure_session
+# async def routes(*, session: aiohttp.ClientSession):
+#     # Stop ID of the same stop from different route will have the same ID,
+#     # caching the stop details to reduce the number of requests (around 600 - 700).
+#     # Execution time is not guaranteed to be reduced.
+#     stop_cache = {}
+#     semaphore = asyncio.Semaphore(10)
+
+#     async with session.get('https://rt.data.gov.hk/v2/transport/citybus/route/ctb') as response:
+#         tasks = [_stop_list(s['route'], stop_cache, semaphore, session)
+#                  for s in (await response.json())['data']]
+#     return {route[0]: route[1] for route in await asyncio.gather(*tasks)}
 
 
-async def _route_ends(route: str,
-                      direction: Literal['inbound', 'outbound'],
-                      session: aiohttp.ClientSession) -> Optional[tuple[str, str]]:
-    # pylint: disable=line-too-long
-    async with session.get(
-            f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{route}/{direction}') as request:
-        data = (await request.json())['data']
-        return None if len(data) == 0 else (data[0]['stop'], data[-1]['stop'])
+# async def _route_ends(route: str,
+#                       direction: Literal['inbound', 'outbound'],
+#                       session: aiohttp.ClientSession) -> Optional[tuple[str, str]]:
+#     # pylint: disable=line-too-long
+#     async with session.get(
+#             f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{route}/{direction}') as request:
+#         data = (await request.json())['data']
+#         return None if len(data) == 0 else (data[0]['stop'], data[-1]['stop'])
 
 
-async def _stop_list(
-        route: str, cache: dict, semaphore: asyncio.Semaphore, session: aiohttp.ClientSession):
-    async with semaphore:
-        ends = await asyncio.gather(_route_ends(route, 'outbound', session),
-                                    _route_ends(route, 'inbound', session))
+# async def _stop_list(
+#         route: str, cache: dict, semaphore: asyncio.Semaphore, session: aiohttp.ClientSession):
+#     async def _stop_name(stop_id: str, session: aiohttp.ClientSession) -> dict[str, str]:
+#         async with session.get(
+#                 f'https://rt.data.gov.hk/v2/transport/citybus/stop/{stop_id}') as request:
+#             data = (await request.json())['data']
+#             return {
+#                 'zh': data.get('name_tc', '未有資料'),
+#                 'en': data.get('name_en', 'N/A')
+#             }
 
-    for direction in ends:
-        if direction is None:
-            continue
-        cache.setdefault(direction[0], await _stop_name(direction[0], session))
-        cache.setdefault(direction[1], await _stop_name(direction[1], session))
+#     async with semaphore:
+#         ends = await asyncio.gather(_route_ends(route, 'outbound', session),
+#                                     _route_ends(route, 'inbound', session))
 
-    return route, {
-        'outbound': [] if ends[0] is None else [{
-            'id': f'{route}_outbound_1',
-            'description': None,
-            'orig': cache.get(ends[0][0]),
-            'dest': cache.get(ends[0][1]),
-        }],
-        'inbound': [] if ends[1] is None else [{
-            'id': f'{route}_inbound_1',
-            'description': None,
-            'orig': cache.get(ends[1][0]),
-            'dest': cache.get(ends[1][1]),
+#     for direction in ends:
+#         if direction is None:
+#             continue
+#         cache.setdefault(direction[0], await _stop_name(direction[0], session))
+#         cache.setdefault(direction[1], await _stop_name(direction[1], session))
 
-        }]
-    }
+#     return route, {
+#         'outbound': [] if ends[0] is None else [{
+#             'id': f'{route}_outbound_1',
+#             'description': None,
+#             'orig': cache.get(ends[0][0]),
+#             'dest': cache.get(ends[0][1]),
+#         }],
+#         'inbound': [] if ends[1] is None else [{
+#             'id': f'{route}_inbound_1',
+#             'description': None,
+#             'orig': cache.get(ends[1][0]),
+#             'dest': cache.get(ends[1][1]),
+
+#         }]
+#     }

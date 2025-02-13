@@ -1,3 +1,4 @@
+import asyncio
 import csv
 from datetime import datetime
 from typing import Generator, Optional
@@ -6,7 +7,7 @@ import aiohttp
 import pytz
 
 from . import t
-from ._utils import dt_to_8601, ensure_session, error_eta
+from ._utils import dt_to_8601, ensure_session, error_eta, search_location
 
 
 @ensure_session
@@ -75,11 +76,15 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t
 
     if len(stops_) == 0:
         raise KeyError('route not exists')
+
+    locations = await asyncio.gather(
+        *[search_location(f'\u6e2f\u9435{s[4]}\u7ad9', session) for s in stops_])
     return ({
         'id': s[2],
         'seq': int(s[6].removesuffix('.00')),
-        'name': {'zh': s[4], 'en': s[5]}
-    } for s in stops_)
+        'name': {'zh': s[4], 'en': s[5]},
+        'location': locations[i]
+    } for i, s in enumerate(stops_))
 
 
 @ ensure_session

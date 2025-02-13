@@ -93,7 +93,8 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t
         'name': {
             'zh': stop['stopName_c'],
             'en': stop['stopName_e']
-        }
+        },
+        'location': (stop['latitude'], stop['longitude'])
     } for idx, stop in enumerate(stops_))
 
 

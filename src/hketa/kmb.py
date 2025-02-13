@@ -55,7 +55,8 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> list[dict[s
                 'name': {
                     'tc': detail.get('name_tc'),
                     'en': detail.get('name_en'),
-                }
+                },
+                'location': (detail['lat'], detail['long'])
             }
 
     # pylint: disable=line-too-long
