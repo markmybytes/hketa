@@ -5,6 +5,8 @@ Transport = Literal['ctb', 'kmb', 'lrt', 'lrtfeeder', 'nlb', 'mtr']
 
 Language = Literal['zh', 'en']
 
+Direction = Literal['outbound', 'inbound']
+
 
 class Eta(TypedDict):
     class Extras(TypedDict):
