@@ -25,7 +25,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
                         'en': r['dest_en']
                     },
                 }],
-                'inbound': [] if len((await request.json())['data']) == 0 else {
+                'inbound': [] if len((await request.json())['data']) == 0 else [{
                     'id': f'{r["route"]}_inbound_1',
                     'description': None,
                     'orig': {
@@ -37,7 +37,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
                         'en': r['orig_en']
                     },
 
-                }
+                }]
             }
 
     async with session.get('https://rt.data.gov.hk/v2/transport/citybus/route/ctb') as request:
