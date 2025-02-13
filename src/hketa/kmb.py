@@ -22,8 +22,8 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
             routes_[route['route']][direction].append({
                 'id': f'{route["route"]}_{direction}_{route["service_type"]}',
                 'description': None,
-                'orig': {'zh': route['orig_tc'], 'en': route['orig_en']},
-                'dest': {'zh': route['dest_tc'], 'en': route['dest_en']},
+                'orig': {'tc': route['orig_tc'], 'en': route['orig_en']},
+                'dest': {'tc': route['dest_tc'], 'en': route['dest_en']},
             })
 
             if len(routes_[route['route']][direction]) > 1:
@@ -36,7 +36,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
         for service in routes_[varient['Route']]['outbound' if varient['Bound'] == '1' else 'inbound']:
             if service['id'].split('_')[2] == varient['ServiceType'].strip().removeprefix('0'):
                 service['description'] = {
-                    'zh': varient['Desc_CHI'],
+                    'tc': varient['Desc_CHI'],
                     'en': varient['Desc_ENG']
                 }
                 break
@@ -73,11 +73,10 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> list[dict[s
 @ensure_session
 async def etas(route_id: str,
                stop_id: str,
-               language: t.Language = 'zh',
+               language: t.Language = 'tc',
                *,
                session: aiohttp.ClientSession) -> t.Etas:
     route, direction, service_type = route_id.split('_')
-    lc = 'tc' if language == 'zh' else 'en'
 
     # pylint: disable=line-too-long
     async with session.get(
@@ -100,20 +99,20 @@ async def etas(route_id: str,
                 return error_eta('eos')
             elif eta['rmk_en'] == '':
                 return error_eta('empty')
-            return error_eta(eta[f'rmk_{lc}'])
+            return error_eta(eta[f'rmk_{language}'])
 
         eta_dt = datetime.fromisoformat(eta['eta'])
         etas_.append({
             'eta': dt_to_8601(eta_dt),
             'is_arriving': (eta_dt - timestamp).total_seconds() < 30,
-            'is_scheduled': eta.get(f'rmk_{lc}') in ('\u539f\u5b9a\u73ed\u6b21', 'Scheduled Bus'),
+            'is_scheduled': eta.get(f'rmk_{language}') in ('\u539f\u5b9a\u73ed\u6b21', 'Scheduled Bus'),
             'extras': {
-                'destinaion': eta[f'dest_{lc}'],
+                'destinaion': eta[f'dest_{language}'],
                 'varient': _varient_text(eta['service_type'], language),
                 'platform': None,
                 'car_length': None
             },
-            'remark': eta[f'rmk_{lc}'],
+            'remark': eta[f'rmk_{language}'],
         })
 
     return {
@@ -140,4 +139,4 @@ async def _variants(route: str,
 def _varient_text(service_type: str, language: t.Language) -> Optional[str]:
     if service_type == '1':
         return None
-    return '\u7279\u5225\u73ed\u6b21' if language == 'zh' else 'Special Departure'
+    return '\u7279\u5225\u73ed\u6b21' if language == 'tc' else 'Special Departure'

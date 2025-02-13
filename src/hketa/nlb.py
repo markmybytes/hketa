@@ -50,11 +50,11 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
             detail = {
                 'description': description(route),
                 'orig': {
-                    'zh': route['routeName_c'].split(' \u003E ')[0],
+                    'tc': route['routeName_c'].split(' \u003E ')[0],
                     'en': route['routeName_e'].split(' \u003E ')[0],
                 },
                 'dest': {
-                    'zh': route['routeName_c'].split(' \u003E ')[1],
+                    'tc': route['routeName_c'].split(' \u003E ')[1],
                     'en': route['routeName_e'].split(' \u003E ')[1],
                 }
             }
@@ -91,7 +91,7 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t
         'id': stop['stopId'],
         'seq': idx,
         'name': {
-            'zh': stop['stopName_c'],
+            'tc': stop['stopName_c'],
             'en': stop['stopName_e']
         },
         'location': (stop['latitude'], stop['longitude'])
@@ -101,7 +101,7 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t
 @ensure_session
 async def etas(route_id: str,
                stop_id: str,
-               language: t.Language = 'zh',
+               language: t.Language = 'tc',
                *,
                session: aiohttp.ClientSession) -> t.Etas:
     async with session.get('https://rt.data.gov.hk/v2/transport/nlb/stop.php',

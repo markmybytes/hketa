@@ -51,7 +51,7 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t
     return ({
         'id': s[3],
         'seq': int(s[2].removesuffix('.00')),
-        'name': {'zh': s[6], 'en': s[7]},
+        'name': {'tc': s[6], 'en': s[7]},
         'location': (s[4], s[5])
     } for s in stops_)
 
@@ -59,7 +59,7 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t
 @ ensure_session
 async def etas(route_id: str,
                stop_id: str,
-               language: t.Language = 'zh',
+               language: t.Language = 'tc',
                *,
                session: aiohttp.ClientSession) -> t.Etas:
     route, *_ = route_id.split('_')

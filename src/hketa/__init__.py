@@ -27,7 +27,7 @@ def stops(co: t.Transport,
 def etas(co: t.Transport,
          route_id: str,
          stop_id: str,
-         language: t.Language = 'zh',
+         language: t.Language = 'tc',
          *,
          session: aiohttp.ClientSession = None) -> Coroutine[None, None, t.Etas]:
     return importlib.import_module(f'.{co}', sys.modules[__name__].__package__)\

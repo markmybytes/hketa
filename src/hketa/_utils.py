@@ -15,19 +15,19 @@ with open(Path(__file__).parent.joinpath('ua.txt'), encoding='utf-8') as f:
 
 ERR_MESSAGES = {
     'api-error': {
-        'zh': 'API 錯誤',
+        'tc': 'API 錯誤',
         'en': 'API Error',
     },
     'empty': {
-        'zh': '沒有預報',
+        'tc': '沒有預報',
         'en': 'No Data',
     },
     'eos': {
-        'zh': '服務時間已過',
+        'tc': '服務時間已過',
         'en': 'Not in Service',
     },
     'ss-effect': {
-        'zh': '特別車務安排',
+        'tc': '特別車務安排',
         'en': 'Special Service in Effect',
     }
 }
@@ -57,7 +57,7 @@ def timestamp():
 
 def error_eta(message: Union[Literal['api-error', 'empty', 'eos', 'ss-effect'], str],
               ts: datetime = None,
-              language: t.Language = 'zh'):
+              language: t.Language = 'tc'):
     return {
         'timestamp': dt_to_8601(ts or timestamp()),
         'message': ERR_MESSAGES.get(message, {}).get(language, message),

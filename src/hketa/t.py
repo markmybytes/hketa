@@ -3,7 +3,7 @@ from typing import Literal, Optional, TypedDict
 
 Transport = Literal['ctb', 'kmb', 'lrt', 'lrtfeeder', 'nlb', 'mtr']
 
-Language = Literal['zh', 'en']
+Language = Literal['tc', 'en']
 
 Direction = Literal['outbound', 'inbound']
 

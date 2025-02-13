@@ -17,11 +17,11 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
                     'id': f'{r["route"]}_outbound_1',
                     'description': None,
                     'orig': {
-                        'zh': r['orig_tc'],
+                        'tc': r['orig_tc'],
                         'en': r['orig_en']
                     },
                     'dest': {
-                        'zh': r['dest_tc'],
+                        'tc': r['dest_tc'],
                         'en': r['dest_en']
                     },
                 }],
@@ -29,11 +29,11 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
                     'id': f'{r["route"]}_inbound_1',
                     'description': None,
                     'orig': {
-                        'zh': r['dest_tc'],
+                        'tc': r['dest_tc'],
                         'en': r['dest_en']
                     },
                     'dest': {
-                        'zh': r['orig_tc'],
+                        'tc': r['orig_tc'],
                         'en': r['orig_en']
                     },
 
@@ -77,11 +77,10 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession) -> list[dict[s
 @ensure_session
 async def etas(route_id: str,
                stop_id: str,
-               language: t.Language = 'zh',
+               language: t.Language = 'tc',
                *,
                session: aiohttp.ClientSession) -> t.Etas:
     route, direction, _ = route_id.split('_')
-    lc = 'tc' if language == 'zh' else 'en'
 
     async with session.get(
             f'https://rt.data.gov.hk/v2/transport/citybus/eta/ctb/{stop_id}/{route}') as request:
@@ -105,12 +104,12 @@ async def etas(route_id: str,
                 'is_arriving': False,
                 'is_scheduled': True,
                 'extras': {
-                    'destinaion': eta[f'dest_{lc}'],
+                    'destinaion': eta[f'dest_{language}'],
                     'varient': None,
                     'platform': None,
                     'car_length': None
                 },
-                'remark': eta[f'rmk_{lc}'],
+                'remark': eta[f'rmk_{language}'],
             })
         else:
             eta_dt = datetime.fromisoformat(eta['eta'])
@@ -119,12 +118,12 @@ async def etas(route_id: str,
                 'is_arriving': (eta_dt - timestamp).total_seconds() < 60,
                 'is_scheduled': True,
                 'extras': {
-                    'destinaion': eta[f'dest_{lc}'],
+                    'destinaion': eta[f'dest_{language}'],
                     'varient': None,
                     'platform': None,
                     'car_length': None
                 },
-                'remark': eta[f'rmk_{lc}'],
+                'remark': eta[f'rmk_{language}'],
             })
 
     return {
