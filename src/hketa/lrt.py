@@ -32,7 +32,8 @@ async def routes(*, session: aiohttp.ClientSession):
             else:
                 # destination
                 if row[0] in ('705', '706'):
-                    routes[row[0]][direction][0]['id'] = 'TSW Circular'
+                    routes[row[0]][direction][0]['id'] =\
+                        f'{row[0]}_{direction}_TSW Circular'
                 else:
                     routes[row[0]][direction][0]['id'] =\
                         f'{row[0]}_{direction}_{row[5]}'
