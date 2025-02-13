@@ -1,10 +1,7 @@
 import csv
 import json
-import random
-import re
 import tempfile
 import xml.etree.ElementTree as ET
-from datetime import datetime
 from pathlib import Path
 from typing import Literal, Union
 
@@ -12,7 +9,7 @@ import aiohttp
 
 from ._utils import ensure_session, is_up_to_date
 
-_BASE_PATH = Path(__file__).parent
+_BASE_PATH = Path(tempfile.gettempdir())
 
 
 def _bound_id_conv(bound_id: Literal['1', '2']):
