@@ -80,7 +80,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
 
 
 @ensure_session
-async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop]:
+async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop, None, None]:
     # pylint: disable=line-too-long
     async with session.get(
             f'https://rt.data.gov.hk/v2/transport/nlb/stop.php?action=list&routeId={route_id.split("_")[-1]}') as request:

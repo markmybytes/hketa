@@ -48,7 +48,7 @@ async def routes(*, session: aiohttp.ClientSession) -> dict[str, t.Route]:
 
 
 @ ensure_session
-async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop]:
+async def stops(route_id: str, *, session: aiohttp.ClientSession) -> Generator[t.Stop, None, None]:
     async with session.get(
             'https://opendata.mtr.com.hk/data/light_rail_routes_and_stops.csv') as request:
         # pylint: disable=line-too-long
