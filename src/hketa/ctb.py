@@ -25,7 +25,7 @@ from ._utils import dt_to_8601, ensure_session, error_eta
 async def routes(*, session: aiohttp.ClientSession):
     async def ends(r: dict, s: aiohttp.ClientSession):
         # pylint: disable=line-too-long
-        async with s.get(f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{r["route"]}/inbound') as response:
+        async with s.get(f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{r["route"]}/inbound') as request:
             return r['route'], {
                 'outbound': [{
                     'id': f'{r["route"]}_outbound_1',
@@ -39,7 +39,7 @@ async def routes(*, session: aiohttp.ClientSession):
                         'en': r['dest_en']
                     },
                 }],
-                'inbound': [] if len((await response.json())['data']) == 0 else {
+                'inbound': [] if len((await request.json())['data']) == 0 else {
                     'id': f'{r["route"]}_inbound_1',
                     'description': None,
                     'orig': {
@@ -54,10 +54,10 @@ async def routes(*, session: aiohttp.ClientSession):
                 }
             }
 
-    async with session.get('https://rt.data.gov.hk/v2/transport/citybus/route/ctb') as response:
+    async with session.get('https://rt.data.gov.hk/v2/transport/citybus/route/ctb') as request:
         return {d[0]: d[1]
                 for d in await asyncio.gather(*[ends(r, session)
-                                                for r in (await response.json())['data']])
+                                                for r in (await request.json())['data']])
                 }
 
 
@@ -65,17 +65,17 @@ async def routes(*, session: aiohttp.ClientSession):
 async def stops(route_id: str, *, session: aiohttp.ClientSession):
     # pylint: disable=line-too-long
     async with session.get(
-            f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{"/".join(route_id.split("_")[:2])}') as response:
-        stops = (await response.json())['data']
-        names = await asyncio.gather(*[_stop_name(s['stop'], session) for s in stops])
+            f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{"/".join(route_id.split("_")[:2])}') as request:
+        data = (await request.json())['data']
+        names = await asyncio.gather(*[_stop_name(s['stop'], session) for s in data])
 
-    if len(stops) == 0:
+    if len(data) == 0:
         raise KeyError('route not exists')
     return ({
         'id': stop['stop'],
         'seq': int(stop['seq']),
         'name': names[idx]
-    } for idx, stop in enumerate(stops))
+    } for idx, stop in enumerate(data))
 
 
 @ensure_session
@@ -96,7 +96,7 @@ async def etas(route_id: str,
     if len(response['data']) == 0:
         return error_eta('empty')
 
-    etas = []
+    etas_ = []
     timestamp = datetime.fromisoformat(response['generated_timestamp'])
 
     for eta in response['data']:
@@ -104,7 +104,7 @@ async def etas(route_id: str,
             continue
         if eta['eta'] == '':
             # 九巴時段
-            etas.append({
+            etas_.append({
                 'eta': None,
                 'is_arriving': False,
                 'is_scheduled': True,
@@ -118,7 +118,7 @@ async def etas(route_id: str,
             })
         else:
             eta_dt = datetime.fromisoformat(eta['eta'])
-            etas.append({
+            etas_.append({
                 'eta': dt_to_8601(eta_dt),
                 'is_arriving': (eta_dt - timestamp).total_seconds() < 60,
                 'is_scheduled': True,
@@ -134,17 +134,17 @@ async def etas(route_id: str,
     return {
         'timestamp': dt_to_8601(timestamp),
         'message': None,
-        'etas': etas
+        'etas': etas_
     }
 
 
 async def _stop_name(stop_id: str, session: aiohttp.ClientSession) -> dict[str, str]:
     async with session.get(
-            f'https://rt.data.gov.hk/v2/transport/citybus/stop/{stop_id}') as response:
-        json = (await response.json())['data']
+            f'https://rt.data.gov.hk/v2/transport/citybus/stop/{stop_id}') as request:
+        data = (await request.json())['data']
         return {
-            'zh': json.get('name_tc', '未有資料'),
-            'en': json.get('name_en', 'N/A')
+            'zh': data.get('name_tc', '未有資料'),
+            'en': data.get('name_en', 'N/A')
         }
 
 
@@ -153,9 +153,9 @@ async def _route_ends(route: str,
                       session: aiohttp.ClientSession) -> Optional[tuple[str, str]]:
     # pylint: disable=line-too-long
     async with session.get(
-            f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{route}/{direction}') as response:
-        stops = (await response.json())['data']
-        return None if len(stops) == 0 else (stops[0]['stop'], stops[-1]['stop'])
+            f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{route}/{direction}') as request:
+        data = (await request.json())['data']
+        return None if len(data) == 0 else (data[0]['stop'], data[-1]['stop'])
 
 
 async def _stop_list(

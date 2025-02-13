@@ -10,7 +10,7 @@ from ._utils import dt_to_8601, ensure_session, error_eta
 
 @ensure_session
 async def routes(*, session: aiohttp.ClientSession):
-    def description(route: dict[str,],):
+    def description(route: dict[str,]):
         zh, en = [], []
         if route['specialRoute'] == 1:
             zh.append('\u7279\u5225\u7dda')
@@ -30,14 +30,15 @@ async def routes(*, session: aiohttp.ClientSession):
             'en': ', '.join(en)
         }
 
-    routes = {}
-    async with session.get('https://rt.data.gov.hk/v2/transport/nlb/route.php?action=list') as response:
-        for route in (await response.json())['routes']:
-
-            routes.setdefault(route['routeNo'],
-                              {'outbound': [], 'inbound': []})
-            direction = 'inbound' if len(
-                routes[route['routeNo']]['outbound']) else 'outbound'
+    routes_ = {}
+    async with session.get(
+            'https://rt.data.gov.hk/v2/transport/nlb/route.php?action=list') as request:
+        for route in (await request.json())['routes']:
+            routes_.setdefault(route['routeNo'],
+                               {'outbound': [], 'inbound': []})
+            direction = ('inbound'
+                         if len(routes_[route['routeNo']]['outbound'])
+                         else 'outbound')
             detail = {
                 'description': description(route),
                 'orig': {
@@ -51,8 +52,8 @@ async def routes(*, session: aiohttp.ClientSession):
             }
 
             # when both the `outbound` and `inbound` have data, it is a special route.
-            if all(len(b) for b in routes[route['routeNo']].values()):
-                for bound, parent_rt in routes[route['routeNo']].items():
+            if all(len(b) for b in routes_[route['routeNo']].values()):
+                for bound, parent_rt in routes_[route['routeNo']].items():
                     for r in parent_rt:
                         # special routes usually only differ from either orig or dest stop
                         if (r['orig']['en'] == detail['orig']['en']
@@ -63,17 +64,19 @@ async def routes(*, session: aiohttp.ClientSession):
                         continue
                     break
 
-            routes[route['routeNo']][direction].append({
+            routes_[route['routeNo']][direction].append({
                 'id': f'{route["routeNo"]}_{direction}_{route["routeId"]}',
                 **detail
             })
-    return routes
+    return routes_
 
 
 @ensure_session
 async def stops(route_id: str, *, session: aiohttp.ClientSession):
-    async with session.get(f'https://rt.data.gov.hk/v2/transport/nlb/stop.php?action=list&routeId={route_id.split("_")[-1]}') as response:
-        if len(stops := (await response.json())['stops']) == 0:
+    # pylint: disable=line-too-long
+    async with session.get(
+            f'https://rt.data.gov.hk/v2/transport/nlb/stop.php?action=list&routeId={route_id.split("_")[-1]}') as request:
+        if len(stops_ := (await request.json())['stops']) == 0:
             raise KeyError('route not exists')
 
     return ({
@@ -83,11 +86,15 @@ async def stops(route_id: str, *, session: aiohttp.ClientSession):
             'zh': stop['stopName_c'],
             'en': stop['stopName_e']
         }
-    } for idx, stop in enumerate(stops))
+    } for idx, stop in enumerate(stops_))
 
 
 @ensure_session
-async def etas(route_id: str, stop_id: str, language: t.Language = 'zh', *, session: aiohttp.ClientSession):
+async def etas(route_id: str,
+               stop_id: str,
+               language: t.Language = 'zh',
+               *,
+               session: aiohttp.ClientSession):
     async with session.get('https://rt.data.gov.hk/v2/transport/nlb/stop.php',
                            params={
                                'action': 'estimatedArrivals',
@@ -103,29 +110,29 @@ async def etas(route_id: str, stop_id: str, language: t.Language = 'zh', *, sess
     if not response.get('estimatedArrivals', []):
         return error_eta('empty')
 
-    etas = []
+    etas_ = []
     timestamp = datetime.now().replace(tzinfo=pytz.timezone('Etc/GMT-8'))
 
     for eta in response['estimatedArrivals']:
         eta_dt = datetime.fromisoformat(eta['estimatedArrivalTime']) \
             .astimezone(pytz.timezone('Asia/Hong_kong'))
 
-        etas.append({
+        etas_.append({
             'eta': dt_to_8601(eta_dt),
             'is_arriving': (eta_dt - timestamp).total_seconds() < 60,
             'is_scheduled': not (eta.get('departed') == '1'
                                  and eta.get('noGPS') == '1'),
             'extras': {
-                    'destinaion': None,
-                    'varient': eta.get('routeVariantName'),
-                    'platform': None,
-                    'car_length': None
-                    },
+                'destinaion': None,
+                'varient': eta.get('routeVariantName'),
+                'platform': None,
+                'car_length': None
+            },
             'remark': None,
         })
 
     return {
         'timestamp': dt_to_8601(timestamp),
         'message': None,
-        'etas': etas
+        'etas': etas_
     }
