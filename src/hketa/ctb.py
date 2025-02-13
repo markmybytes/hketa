@@ -24,6 +24,7 @@ from ._utils import dt_to_8601, ensure_session, error_eta
 @ensure_session
 async def routes(*, session: aiohttp.ClientSession):
     async def ends(r: dict, s: aiohttp.ClientSession):
+        # pylint: disable=line-too-long
         async with s.get(f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{r["route"]}/inbound') as response:
             return r['route'], {
                 'outbound': [{
@@ -61,8 +62,10 @@ async def routes(*, session: aiohttp.ClientSession):
 
 
 @ensure_session
-async def stops(id: str, *, session: aiohttp.ClientSession):
-    async with session.get(f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{"/".join(id.split("_")[:2])}') as response:
+async def stops(route_id: str, *, session: aiohttp.ClientSession):
+    # pylint: disable=line-too-long
+    async with session.get(
+            f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{"/".join(route_id.split("_")[:2])}') as response:
         stops = (await response.json())['data']
         names = await asyncio.gather(*[_stop_name(s['stop'], session) for s in stops])
 
@@ -76,11 +79,16 @@ async def stops(id: str, *, session: aiohttp.ClientSession):
 
 
 @ensure_session
-async def etas(route_id: str, stop_id: str, language: t.Language = 'zh', *, session: aiohttp.ClientSession):
+async def etas(route_id: str,
+               stop_id: str,
+               language: t.Language = 'zh',
+               *,
+               session: aiohttp.ClientSession):
     route, direction, _ = route_id.split('_')
     lc = 'tc' if language == 'zh' else 'en'
 
-    async with session.get(f'https://rt.data.gov.hk/v2/transport/citybus/eta/ctb/{stop_id}/{route}') as request:
+    async with session.get(
+            f'https://rt.data.gov.hk/v2/transport/citybus/eta/ctb/{stop_id}/{route}') as request:
         response = await request.json()
 
     if len(response) == 0 or response.get('data') is None:
@@ -130,8 +138,9 @@ async def etas(route_id: str, stop_id: str, language: t.Language = 'zh', *, sess
     }
 
 
-async def _stop_name(id: str, session: aiohttp.ClientSession) -> dict[str, str]:
-    async with session.get(f'https://rt.data.gov.hk/v2/transport/citybus/stop/{id}') as response:
+async def _stop_name(stop_id: str, session: aiohttp.ClientSession) -> dict[str, str]:
+    async with session.get(
+            f'https://rt.data.gov.hk/v2/transport/citybus/stop/{stop_id}') as response:
         json = (await response.json())['data']
         return {
             'zh': json.get('name_tc', '未有資料'),
@@ -139,13 +148,18 @@ async def _stop_name(id: str, session: aiohttp.ClientSession) -> dict[str, str]:
         }
 
 
-async def _route_ends(route: str, direction: Literal['inbound', 'outbound'], session: aiohttp.ClientSession) -> Optional[tuple[str, str]]:
-    async with session.get(f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{route}/{direction}') as response:
+async def _route_ends(route: str,
+                      direction: Literal['inbound', 'outbound'],
+                      session: aiohttp.ClientSession) -> Optional[tuple[str, str]]:
+    # pylint: disable=line-too-long
+    async with session.get(
+            f'https://rt.data.gov.hk/v2/transport/citybus/route-stop/ctb/{route}/{direction}') as response:
         stops = (await response.json())['data']
         return None if len(stops) == 0 else (stops[0]['stop'], stops[-1]['stop'])
 
 
-async def _stop_list(route: str, cache: dict, semaphore: asyncio.Semaphore, session: aiohttp.ClientSession):
+async def _stop_list(
+        route: str, cache: dict, semaphore: asyncio.Semaphore, session: aiohttp.ClientSession):
     async with semaphore:
         ends = await asyncio.gather(_route_ends(route, 'outbound', session),
                                     _route_ends(route, 'inbound', session))

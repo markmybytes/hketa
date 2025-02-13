@@ -12,13 +12,13 @@ from ._utils import dt_to_8601, ensure_session, error_eta
 async def routes(*, session: aiohttp.ClientSession):
     def description(route: dict[str,],):
         zh, en = [], []
-        if (route['specialRoute'] == 1):
+        if route['specialRoute'] == 1:
             zh.append('\u7279\u5225\u7dda')
             en.append('Special Departure')
-        if ('Circular' in route['routeName_e']):
+        if 'Circular' in route['routeName_e']:
             zh.append('\u5faa\u74b0\u7dda')
             en.append('Circular')
-        if ('(from' in route['routeName_e'] or '(to' in route['routeName_e']):
+        if '(from' in route['routeName_e'] or '(to' in route['routeName_e']:
             s_en = re.search(r'\((from|to)\s(.*?)\)', route['routeName_e'])
             s_zh = re.search(r'\((至)(.*?)\)|\((.*?)(開)\)',
                              route['routeName_c'])
@@ -71,8 +71,8 @@ async def routes(*, session: aiohttp.ClientSession):
 
 
 @ensure_session
-async def stops(id: str, *, session: aiohttp.ClientSession):
-    async with session.get(f'https://rt.data.gov.hk/v2/transport/nlb/stop.php?action=list&routeId={id.split("_")[-1]}') as response:
+async def stops(route_id: str, *, session: aiohttp.ClientSession):
+    async with session.get(f'https://rt.data.gov.hk/v2/transport/nlb/stop.php?action=list&routeId={route_id.split("_")[-1]}') as response:
         if len(stops := (await response.json())['stops']) == 0:
             raise KeyError('route not exists')
 
@@ -88,7 +88,7 @@ async def stops(id: str, *, session: aiohttp.ClientSession):
 
 @ensure_session
 async def etas(route_id: str, stop_id: str, language: t.Language = 'zh', *, session: aiohttp.ClientSession):
-    async with session.get(f'https://rt.data.gov.hk/v2/transport/nlb/stop.php',
+    async with session.get('https://rt.data.gov.hk/v2/transport/nlb/stop.php',
                            params={
                                'action': 'estimatedArrivals',
                                'routeId': route_id.split('_')[-1],

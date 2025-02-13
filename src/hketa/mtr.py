@@ -58,16 +58,18 @@ async def routes(*, session: aiohttp.ClientSession):
 
 
 @ensure_session
-async def stops(id: str, *, session: aiohttp.ClientSession):
+async def stops(route_id: str, *, session: aiohttp.ClientSession):
     # column definition:
     #   route, direction, stopCode, stopID, stopTCName, stopENName, seq
     async with session.get('https://opendata.mtr.com.hk/data/mtr_lines_and_stations.csv') as response:
-        if len(id := id.split('_')) > 2:
+        if len(route_id := route_id.split('_')) > 2:
             stops = [stop for stop in csv.reader((await response.text('utf-8')).splitlines()[1:])
-                     if stop[0] == id[0] and stop[1] == f'{id[2]}-{'DT' if id[1] == 'outbound' else 'UT'}']
+                     if stop[0] == route_id[0]
+                     and stop[1] == f'{route_id[2]}-{"DT" if route_id[1] == "outbound" else "UT"}']
         else:
             stops = [stop for stop in csv.reader((await response.text('utf-8')).splitlines()[1:])
-                     if stop[0] == id[0] and stop[1] == ('DT' if id[1] == 'outbound' else 'UT')]
+                     if stop[0] == route_id[0]
+                     and stop[1] == ('DT' if route_id[1] == 'outbound' else 'UT')]
 
     if len(stops) == 0:
         raise KeyError('route not exists')
@@ -109,7 +111,7 @@ async def etas(route_id: str, stop_id: str, language: t.Language = 'zh', *, sess
             'is_scheduled': False,
             'extras': {
                 'destination': entry['dest'],
-                'varient': _varient_text(entry.get('route')),
+                'varient': _varient_text(entry.get('route'), language),
                 'platform': entry['plat'],
                 'car_length': None
             },
