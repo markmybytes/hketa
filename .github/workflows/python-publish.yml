@@ -26,6 +26,10 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Update version in setup.py
+        run: >-
+          sed -i "s/{{VERSION_PLACEHOLDER}}/${{ steps.tag.outputs.TAG_NAME }}/g" setup.py
+
       - name: Build release distributions
         run: |
           # NOTE: put your own distribution build steps here.
